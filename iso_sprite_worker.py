@@ -1,0 +1,171 @@
+"""Standalone bpy worker: import an ANIMATED FBX/GLB and render it as an
+isometric 8-direction sprite sequence (one PNG per direction per frame).
+
+Runs in the ComfyUI-UniRig isolated environment (the one that owns `bpy`), NOT in
+ComfyUI's python. Arguments arrive as a single JSON file path.
+"""
+import bpy, sys, json, math, os
+from mathutils import Vector
+
+cfg = json.load(open(sys.argv[sys.argv.index("--") + 1], encoding="utf-8"))
+
+bpy.ops.wm.read_factory_settings(use_empty=True)
+path = cfg["mesh_path"]
+low = path.lower()
+if low.endswith(".fbx"):
+    bpy.ops.import_scene.fbx(filepath=path)
+elif low.endswith((".glb", ".gltf")):
+    bpy.ops.import_scene.gltf(filepath=path)
+else:
+    raise RuntimeError("unsupported mesh format: " + path)
+
+sc = bpy.context.scene
+
+# --- animation range -------------------------------------------------------
+# Prefer the imported action's own range; fall back to the scene range.
+starts, ends = [], []
+for ob in bpy.data.objects:
+    ad = ob.animation_data
+    if ad and ad.action:
+        r = ad.action.frame_range
+        starts.append(r[0])
+        ends.append(r[1])
+for act in bpy.data.actions:
+    r = act.frame_range
+    starts.append(r[0])
+    ends.append(r[1])
+
+if starts and max(ends) > min(starts):
+    f_start, f_end = int(round(min(starts))), int(round(max(ends)))
+else:
+    f_start, f_end = sc.frame_start, sc.frame_end
+
+if cfg.get("frame_start", -1) >= 0:
+    f_start = int(cfg["frame_start"])
+if cfg.get("frame_end", -1) >= 0:
+    f_end = int(cfg["frame_end"])
+if f_end < f_start:
+    f_end = f_start
+
+n_frames = max(1, int(cfg["frames"]))
+if n_frames == 1 or f_end == f_start:
+    frame_ids = [f_start] * n_frames
+else:
+    if cfg["include_last"] or n_frames == 1:
+        denom = max(1, n_frames - 1)
+        frame_ids = [f_start + int(round(i * (f_end - f_start) / float(denom)))
+                     for i in range(n_frames)]
+    else:
+        # Loop-safe: stop one step short of the end so frame[0] and the frame
+        # after the last do not duplicate the same pose in a cycling clip.
+        span = (f_end - f_start) + 1
+        frame_ids = [f_start + int(round(i * span / float(n_frames))) for i in range(n_frames)]
+    frame_ids = [min(max(f, f_start), f_end) for f in frame_ids]
+
+
+def world_bounds():
+    dg = bpy.context.evaluated_depsgraph_get()
+    mins = Vector((1e9, 1e9, 1e9))
+    maxs = Vector((-1e9, -1e9, -1e9))
+    for ob in sc.objects:
+        if ob.type != "MESH":
+            continue
+        ev = ob.evaluated_get(dg)
+        me = ev.to_mesh()
+        for v in me.vertices:
+            w = ev.matrix_world @ v.co
+            for i in range(3):
+                mins[i] = min(mins[i], w[i])
+                maxs[i] = max(maxs[i], w[i])
+        ev.to_mesh_clear()
+    return mins, maxs
+
+
+# --- framing: union bbox over EVERY sampled frame --------------------------
+# One fixed camera per direction, sized to the whole clip, so the character does
+# not swim or rescale between frames of the sheet.
+gmins = Vector((1e9, 1e9, 1e9))
+gmaxs = Vector((-1e9, -1e9, -1e9))
+for f in sorted(set(frame_ids)):
+    sc.frame_set(f)
+    bpy.context.view_layer.update()
+    mins, maxs = world_bounds()
+    if mins.x > maxs.x:
+        continue
+    for i in range(3):
+        gmins[i] = min(gmins[i], mins[i])
+        gmaxs[i] = max(gmaxs[i], maxs[i])
+if gmins.x > gmaxs.x:
+    raise RuntimeError("no mesh geometry found in " + path)
+
+center = (gmins + gmaxs) / 2.0
+size = max(gmaxs[i] - gmins[i] for i in range(3))
+ground_z = gmins.z
+
+# --- world / lights / render settings --------------------------------------
+for loc, energy in (((2, -2, 2), 3.0), ((-2, -2, 1), 1.5), ((0, 2, 1), 1.2)):
+    ld = bpy.data.lights.new("l", "SUN")
+    ld.energy = energy
+    lo = bpy.data.objects.new("l", ld)
+    sc.collection.objects.link(lo)
+    lo.location = center + Vector(loc) * size
+    lo.rotation_euler = (center - lo.location).normalized().to_track_quat("-Z", "Y").to_euler()
+
+world = bpy.data.worlds.new("w")
+sc.world = world
+world.use_nodes = True
+bg = [float(c) / 255.0 for c in cfg["bg_color"].split(",")][:3]
+world.node_tree.nodes["Background"].inputs[0].default_value = (bg + [1.0])
+world.node_tree.nodes["Background"].inputs[1].default_value = 1.0
+
+engine = cfg.get("engine", "CYCLES")
+try:
+    sc.render.engine = engine
+except TypeError:
+    sc.render.engine = "CYCLES"
+    engine = "CYCLES"
+if sc.render.engine == "CYCLES":
+    sc.cycles.device = "CPU"
+    sc.cycles.samples = int(cfg["samples"])
+    sc.cycles.use_denoising = False      # OIDN is unavailable in the bundled bpy
+
+sc.render.resolution_x = int(cfg["cell_width"])
+sc.render.resolution_y = int(cfg["cell_height"])
+sc.render.resolution_percentage = 100
+sc.render.film_transparent = bool(cfg["transparent"])
+sc.render.image_settings.file_format = "PNG"
+sc.render.image_settings.color_mode = "RGBA" if cfg["transparent"] else "RGB"
+
+cd = bpy.data.cameras.new("cam")
+cam = bpy.data.objects.new("cam", cd)
+sc.collection.objects.link(cam)
+sc.camera = cam
+cd.type = "ORTHO"
+cd.ortho_scale = size * float(cfg["zoom"])
+
+el = math.radians(float(cfg["elevation"]))
+d = size * 3.0
+out_dir = cfg["out_dir"]
+os.makedirs(out_dir, exist_ok=True)
+
+dirs = int(cfg["directions"])
+step = 360.0 / dirs
+written = []
+for di in range(dirs):
+    az = math.radians(float(cfg["start_azimuth"]) + di * step * (-1.0 if cfg["clockwise"] else 1.0))
+    offset = Vector((math.sin(az) * math.cos(el), -math.cos(az) * math.cos(el), math.sin(el))) * d
+    cam.location = center + offset
+    cam.rotation_euler = (-offset).to_track_quat("-Z", "Y").to_euler()
+    for fi, f in enumerate(frame_ids):
+        sc.frame_set(f)
+        bpy.context.view_layer.update()
+        out = os.path.join(out_dir, "d%02d_f%03d.png" % (di, fi))
+        sc.render.filepath = out
+        bpy.ops.render.render(write_still=True)
+        written.append(out)
+
+print("ISO_SPRITE_OK " + json.dumps({
+    "size": size, "ground_z": ground_z, "engine": engine,
+    "frame_start": f_start, "frame_end": f_end, "frame_ids": frame_ids,
+    "directions": dirs, "count": len(written),
+}), flush=True)

@@ -1,0 +1,16 @@
+[project]
+name = "comfyui-iso-sprite"
+description = "Render a rigged, animated 3D character into an isometric 8-direction sprite atlas with Blender."
+version = "1.0.0"
+license = { file = "LICENSE" }
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = ["numpy", "pillow"]
+
+[project.urls]
+Repository = "https://github.com/gunug/comfyui-iso-sprite"
+
+[tool.comfy]
+PublisherId = "gunug"
+DisplayName = "ComfyUI Iso Sprite"
+Icon = ""
