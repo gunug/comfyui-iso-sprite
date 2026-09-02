@@ -8,6 +8,12 @@ result back at the clip's original speed.
 Built to sit at the end of a [ComfyUI-UniRig](https://github.com/Comfy-Org/ComfyUI-UniRig)
 pipeline: mesh → auto-rig → apply animation → **sprite atlas**.
 
+![8 directions x 39 frames, rendered from one animated FBX](docs/example_atlas.webp)
+
+*8 directions × 39 frames off a single 1.6 s clip. Rows are directions.*
+
+<img src="docs/example_direction_loop.webp" width="256" alt="one direction, played back at the clip's original speed">
+
 ## Nodes
 
 ### `Iso Sprite Atlas Render` (`IsoSpriteSheetRender`)
