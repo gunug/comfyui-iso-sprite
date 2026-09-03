@@ -14,6 +14,11 @@ pipeline: mesh → auto-rig → apply animation → **sprite atlas**.
 
 <img src="docs/example_direction_loop.webp" width="256" alt="one direction, played back at the clip's original speed">
 
+![the matching view-space normal-map atlas](docs/example_normal_atlas.webp)
+
+*The same 8 × 39 cells with `render_normals` on: a view-space normal map baked
+from the real geometry, cell-for-cell aligned with the colour sheet.*
+
 ## Nodes
 
 ### `Iso Sprite Atlas Render` (`IsoSpriteSheetRender`)
@@ -37,9 +42,11 @@ animation and packs the cells into one sheet.
 | `layout` | rows=direction | atlas orientation. |
 | `frame_start` / `frame_end` | -1 | -1 = use the clip's own range. |
 | `include_last` | false | off = drop the duplicate final frame so a cycle tiles cleanly. |
+| `render_normals` | false | also render a matching view-space normal-map set and sheet. Roughly doubles render time. |
 
 Outputs: `images` (flat batch, direction-major), `masks`, `atlas` (the sheet),
-`atlas_path`, `report` (JSON: sampled frames, clip range, sheet size).
+`atlas_path`, `report` (JSON: sampled frames, clip range, sheet size), plus
+`normals`, `normal_atlas` and `normal_atlas_path` when `render_normals` is on.
 
 **One camera per direction, sized to the union bounding box of every sampled
 frame** — the character does not swim or rescale between cells.
@@ -104,6 +111,12 @@ Load3D → Hy3DLoadMesh → MIA: Auto Rig → UniRig: Apply Animation
   24 samples this is roughly 0.15 s per cell on CPU.
 - The atlas PNG is written to ComfyUI's output directory via `filename_prefix`;
   `atlas_path` returns where it landed.
+- `render_normals` renders a second pass through a Blender material override, so
+  the normals are the true shading normals, not an image-space estimate of them.
+  They are **view-space, OpenGL convention** — R = +X right, G = +Y up, B = +Z
+  toward the camera — which is what a 2D sprite lighting shader expects. The
+  normal sheet uses the same directions, frames and layout as the colour sheet
+  and is written next to it as `<filename_prefix>_normal`.
 
 ## License
 
