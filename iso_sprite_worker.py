@@ -150,22 +150,91 @@ os.makedirs(out_dir, exist_ok=True)
 
 dirs = int(cfg["directions"])
 step = 360.0 / dirs
-written = []
-for di in range(dirs):
-    az = math.radians(float(cfg["start_azimuth"]) + di * step * (-1.0 if cfg["clockwise"] else 1.0))
-    offset = Vector((math.sin(az) * math.cos(el), -math.cos(az) * math.cos(el), math.sin(el))) * d
-    cam.location = center + offset
-    cam.rotation_euler = (-offset).to_track_quat("-Z", "Y").to_euler()
-    for fi, f in enumerate(frame_ids):
-        sc.frame_set(f)
-        bpy.context.view_layer.update()
-        out = os.path.join(out_dir, "d%02d_f%03d.png" % (di, fi))
-        sc.render.filepath = out
-        bpy.ops.render.render(write_still=True)
-        written.append(out)
+
+
+def render_all(prefix):
+    """Render every direction x frame cell, named <prefix>dNN_fNNN.png."""
+    out = []
+    for di in range(dirs):
+        az = math.radians(float(cfg["start_azimuth"]) + di * step * (-1.0 if cfg["clockwise"] else 1.0))
+        offset = Vector((math.sin(az) * math.cos(el), -math.cos(az) * math.cos(el), math.sin(el))) * d
+        cam.location = center + offset
+        cam.rotation_euler = (-offset).to_track_quat("-Z", "Y").to_euler()
+        for fi, f in enumerate(frame_ids):
+            sc.frame_set(f)
+            bpy.context.view_layer.update()
+            fp = os.path.join(out_dir, "%sd%02d_f%03d.png" % (prefix, di, fi))
+            sc.render.filepath = fp
+            bpy.ops.render.render(write_still=True)
+            out.append(fp)
+    return out
+
+
+def make_view_normal_material():
+    """Emission shader that outputs the CAMERA-space shading normal, encoded
+    n * 0.5 + 0.5 (OpenGL convention: R=+X right, G=+Y up, B=+Z toward viewer).
+    Applied as a view-layer material override, so it is exact geometry, not an
+    image-space estimate."""
+    m = bpy.data.materials.new("iso_view_normal")
+    m.use_nodes = True
+    nt = m.node_tree
+    nt.nodes.clear()
+    out = nt.nodes.new("ShaderNodeOutputMaterial")
+    emis = nt.nodes.new("ShaderNodeEmission")
+    geo = nt.nodes.new("ShaderNodeNewGeometry")
+    vt = nt.nodes.new("ShaderNodeVectorTransform")
+    vt.vector_type = "NORMAL"
+    vt.convert_from = "WORLD"
+    vt.convert_to = "CAMERA"
+    mul = nt.nodes.new("ShaderNodeVectorMath")
+    mul.operation = "MULTIPLY"
+    mul.inputs[1].default_value = (0.5, 0.5, 0.5)
+    add = nt.nodes.new("ShaderNodeVectorMath")
+    add.operation = "ADD"
+    add.inputs[1].default_value = (0.5, 0.5, 0.5)
+    emis.inputs["Strength"].default_value = 1.0
+    nt.links.new(geo.outputs["Normal"], vt.inputs[0])
+    nt.links.new(vt.outputs[0], mul.inputs[0])
+    nt.links.new(mul.outputs[0], add.inputs[0])
+    nt.links.new(add.outputs[0], emis.inputs["Color"])
+    nt.links.new(emis.outputs[0], out.inputs["Surface"])
+    return m
+
+
+written = render_all("")
+
+normals_written = []
+if cfg.get("render_normals", False):
+    vl = bpy.context.view_layer
+    vl.material_override = make_view_normal_material()
+    # The encoded normal must survive untouched: no view transform, no film
+    # curve, always straight alpha so the sheet keeps the same cutout.
+    sc.render.film_transparent = True
+    sc.render.image_settings.color_mode = "RGBA"
+    # "Raw" writes the linear value straight to the file. "Standard" would apply
+    # the sRGB curve and silently gamma-corrupt the encoded normal.
+    for tf in ("Raw", "Standard"):
+        try:
+            sc.view_settings.view_transform = tf
+            break
+        except TypeError:
+            continue
+    try:
+        sc.view_settings.look = "None"
+        sc.view_settings.exposure = 0.0
+        sc.view_settings.gamma = 1.0
+        sc.render.dither_intensity = 0.0
+    except Exception:
+        pass
+    if sc.render.engine == "CYCLES":
+        # Pure emission converges instantly; samples only buy edge AA.
+        sc.cycles.samples = max(4, min(int(cfg["samples"]), 16))
+    normals_written = render_all("n_")
+    vl.material_override = None
 
 print("ISO_SPRITE_OK " + json.dumps({
     "size": size, "ground_z": ground_z, "engine": engine,
     "frame_start": f_start, "frame_end": f_end, "frame_ids": frame_ids,
     "directions": dirs, "count": len(written),
+    "normal_count": len(normals_written),
 }), flush=True)
