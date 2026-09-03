@@ -1,0 +1,1787 @@
+{
+  "id": "905d9271-318c-4c31-a2a3-50b6e80aaa96",
+  "revision": 0,
+  "last_node_id": 22,
+  "last_link_id": 24,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "MIALoadModel",
+      "pos": [
+        4200,
+        1700
+      ],
+      "size": [
+        300,
+        100
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "precision",
+          "name": "precision",
+          "shape": 7,
+          "type": "COMBO",
+          "widget": {
+            "name": "precision"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "attn_backend",
+          "name": "attn_backend",
+          "shape": 7,
+          "type": "COMBO",
+          "widget": {
+            "name": "attn_backend"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "model",
+          "name": "model",
+          "type": "MIA_MODEL",
+          "links": [
+            1
+          ]
+        }
+      ],
+      "title": "MIA 모델 로드",
+      "properties": {
+        "Node name for S&R": "MIALoadModel"
+      },
+      "widgets_values": [
+        "auto",
+        "auto"
+      ],
+      "widgets_values_named": {
+        "precision": "auto",
+        "attn_backend": "auto"
+      }
+    },
+    {
+      "id": 2,
+      "type": "MIAAutoRig",
+      "pos": [
+        5000,
+        1000
+      ],
+      "size": [
+        300,
+        150
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "trimesh",
+          "name": "trimesh",
+          "type": "TRIMESH",
+          "link": 8
+        },
+        {
+          "localized_name": "model",
+          "name": "model",
+          "type": "MIA_MODEL",
+          "link": 1
+        },
+        {
+          "localized_name": "fbx_name",
+          "name": "fbx_name",
+          "shape": 7,
+          "type": "STRING",
+          "widget": {
+            "name": "fbx_name"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "no_fingers",
+          "name": "no_fingers",
+          "shape": 7,
+          "type": "BOOLEAN",
+          "widget": {
+            "name": "no_fingers"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "use_normal",
+          "name": "use_normal",
+          "shape": 7,
+          "type": "BOOLEAN",
+          "widget": {
+            "name": "use_normal"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "reset_to_rest",
+          "name": "reset_to_rest",
+          "shape": 7,
+          "type": "BOOLEAN",
+          "widget": {
+            "name": "reset_to_rest"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "fbx_output_path",
+          "name": "fbx_output_path",
+          "type": "STRING",
+          "links": [
+            2
+          ]
+        }
+      ],
+      "title": "휴머노이드 자동 리깅 (MIA)",
+      "properties": {
+        "Node name for S&R": "MIAAutoRig"
+      },
+      "widgets_values": [
+        "hy3d_char_rigged_v3",
+        false,
+        true,
+        false
+      ],
+      "widgets_values_named": {
+        "fbx_name": "hy3d_char_rigged_v3",
+        "no_fingers": false,
+        "use_normal": true,
+        "reset_to_rest": false
+      }
+    },
+    {
+      "id": 11,
+      "type": "Hy3DLoadMesh",
+      "pos": [
+        4600,
+        1000
+      ],
+      "size": [
+        300,
+        100
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "glb_path",
+          "name": "glb_path",
+          "type": "STRING",
+          "widget": {
+            "name": "glb_path"
+          },
+          "link": 7
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "trimesh",
+          "name": "trimesh",
+          "type": "TRIMESH",
+          "links": [
+            8
+          ]
+        }
+      ],
+      "title": "GLB → TRIMESH 변환",
+      "properties": {
+        "Node name for S&R": "Hy3DLoadMesh"
+      },
+      "widgets_values": [
+        ""
+      ],
+      "widgets_values_named": {
+        "glb_path": ""
+      }
+    },
+    {
+      "id": 12,
+      "type": "Preview3D",
+      "pos": [
+        5800,
+        1450
+      ],
+      "size": [
+        700,
+        700
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "카메라 정보",
+          "name": "camera_info",
+          "shape": 7,
+          "type": "LOAD3D_CAMERA",
+          "link": null
+        },
+        {
+          "localized_name": "bg_image",
+          "name": "bg_image",
+          "shape": 7,
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "localized_name": "모델 파일",
+          "name": "model_file",
+          "type": "STRING,FILE_3D_GLB,FILE_3D_GLTF,FILE_3D_FBX,FILE_3D_OBJ,FILE_3D_STL,FILE_3D_USDZ,FILE_3D",
+          "widget": {
+            "name": "model_file"
+          },
+          "link": 9
+        },
+        {
+          "localized_name": "이미지",
+          "name": "image",
+          "type": "PREVIEW_3D",
+          "widget": {
+            "name": "image"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [],
+      "title": "애니메이션 재생기 (재생/일시정지)",
+      "properties": {
+        "Node name for S&R": "Preview3D",
+        "Last Time Model File": "F:/Comfy-Desktop/ComfyUI-Shared/output/dying_retarget_fixed.fbx",
+        "Resource Folder": "Comfy-Desktop/ComfyUI-Shared/output",
+        "Camera Config": {
+          "cameraType": "perspective",
+          "fov": 35,
+          "state": {
+            "position": {
+              "x": 160.6790313863249,
+              "y": -28.973233427841375,
+              "z": 298.2158949405044
+            },
+            "target": {
+              "x": -38.59100345707364,
+              "y": -5.1997445607464075,
+              "z": 13.281901669264784
+            },
+            "zoom": 1,
+            "cameraType": "perspective"
+          }
+        },
+        "Light Config": {
+          "intensity": 3,
+          "hdri": {
+            "enabled": false,
+            "hdriPath": "",
+            "showAsBackground": false,
+            "intensity": 1
+          }
+        },
+        "Scene Config": {
+          "showGrid": true,
+          "backgroundColor": "#282828",
+          "backgroundImage": "",
+          "backgroundRenderMode": "tiled",
+          "models": [
+            {
+              "position": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+              },
+              "quaternion": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              }
+            }
+          ]
+        },
+        "Model Config": {
+          "upDirection": "original",
+          "materialMode": "original",
+          "showSkeleton": false,
+          "gizmo": {
+            "enabled": false,
+            "mode": "translate",
+            "position": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "rotation": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          }
+        }
+      },
+      "widgets_values": [
+        "",
+        ""
+      ],
+      "widgets_values_named": {
+        "model_file": "F:/Comfy-Desktop/ComfyUI-Shared/output/dying_retarget_fixed.fbx",
+        "image": ""
+      }
+    },
+    {
+      "id": 13,
+      "type": "IsoSpriteSheetRender",
+      "pos": [
+        6600,
+        1000
+      ],
+      "size": [
+        450,
+        862
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "mesh_path",
+          "name": "mesh_path",
+          "type": "STRING",
+          "widget": {
+            "name": "mesh_path"
+          },
+          "link": 13
+        },
+        {
+          "localized_name": "directions",
+          "name": "directions",
+          "type": "INT",
+          "widget": {
+            "name": "directions"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "frames",
+          "name": "frames",
+          "type": "INT",
+          "widget": {
+            "name": "frames"
+          },
+          "link": 18
+        },
+        {
+          "localized_name": "cell_width",
+          "name": "cell_width",
+          "type": "INT",
+          "widget": {
+            "name": "cell_width"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "cell_height",
+          "name": "cell_height",
+          "type": "INT",
+          "widget": {
+            "name": "cell_height"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "elevation",
+          "name": "elevation",
+          "type": "FLOAT",
+          "widget": {
+            "name": "elevation"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "start_azimuth",
+          "name": "start_azimuth",
+          "type": "FLOAT",
+          "widget": {
+            "name": "start_azimuth"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "clockwise",
+          "name": "clockwise",
+          "type": "BOOLEAN",
+          "widget": {
+            "name": "clockwise"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "zoom",
+          "name": "zoom",
+          "type": "FLOAT",
+          "widget": {
+            "name": "zoom"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "engine",
+          "name": "engine",
+          "type": "COMBO",
+          "widget": {
+            "name": "engine"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "samples",
+          "name": "samples",
+          "type": "INT",
+          "widget": {
+            "name": "samples"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "transparent",
+          "name": "transparent",
+          "type": "BOOLEAN",
+          "widget": {
+            "name": "transparent"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "bg_color",
+          "name": "bg_color",
+          "type": "STRING",
+          "widget": {
+            "name": "bg_color"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "layout",
+          "name": "layout",
+          "type": "COMBO",
+          "widget": {
+            "name": "layout"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "filename_prefix",
+          "name": "filename_prefix",
+          "type": "STRING",
+          "widget": {
+            "name": "filename_prefix"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "save_atlas",
+          "name": "save_atlas",
+          "type": "BOOLEAN",
+          "widget": {
+            "name": "save_atlas"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "frame_start",
+          "name": "frame_start",
+          "shape": 7,
+          "type": "INT",
+          "widget": {
+            "name": "frame_start"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "frame_end",
+          "name": "frame_end",
+          "shape": 7,
+          "type": "INT",
+          "widget": {
+            "name": "frame_end"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "include_last",
+          "name": "include_last",
+          "shape": 7,
+          "type": "BOOLEAN",
+          "widget": {
+            "name": "include_last"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "render_normals",
+          "name": "render_normals",
+          "shape": 7,
+          "type": "BOOLEAN",
+          "widget": {
+            "name": "render_normals"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "supersample",
+          "name": "supersample",
+          "shape": 7,
+          "type": "INT",
+          "widget": {
+            "name": "supersample"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "view_transform",
+          "name": "view_transform",
+          "shape": 7,
+          "type": "COMBO",
+          "widget": {
+            "name": "view_transform"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "ambient_strength",
+          "name": "ambient_strength",
+          "shape": 7,
+          "type": "FLOAT",
+          "widget": {
+            "name": "ambient_strength"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "ambient_color",
+          "name": "ambient_color",
+          "shape": 7,
+          "type": "STRING",
+          "widget": {
+            "name": "ambient_color"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "key_strength",
+          "name": "key_strength",
+          "shape": 7,
+          "type": "FLOAT",
+          "widget": {
+            "name": "key_strength"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "fill_strength",
+          "name": "fill_strength",
+          "shape": 7,
+          "type": "FLOAT",
+          "widget": {
+            "name": "fill_strength"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "rim_strength",
+          "name": "rim_strength",
+          "shape": 7,
+          "type": "FLOAT",
+          "widget": {
+            "name": "rim_strength"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "sun_softness",
+          "name": "sun_softness",
+          "shape": 7,
+          "type": "FLOAT",
+          "widget": {
+            "name": "sun_softness"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "ground_shadow",
+          "name": "ground_shadow",
+          "shape": 7,
+          "type": "BOOLEAN",
+          "widget": {
+            "name": "ground_shadow"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "images",
+          "name": "images",
+          "type": "IMAGE",
+          "links": [
+            12,
+            14,
+            16
+          ]
+        },
+        {
+          "localized_name": "masks",
+          "name": "masks",
+          "type": "MASK",
+          "links": null
+        },
+        {
+          "localized_name": "atlas",
+          "name": "atlas",
+          "type": "IMAGE",
+          "links": [
+            11
+          ]
+        },
+        {
+          "localized_name": "atlas_path",
+          "name": "atlas_path",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "localized_name": "report",
+          "name": "report",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "localized_name": "normals",
+          "name": "normals",
+          "type": "IMAGE",
+          "links": [
+            24
+          ]
+        },
+        {
+          "localized_name": "normal_atlas",
+          "name": "normal_atlas",
+          "type": "IMAGE",
+          "links": [
+            22
+          ]
+        },
+        {
+          "localized_name": "normal_atlas_path",
+          "name": "normal_atlas_path",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "title": "아이소 8방향 스프라이트 아틀라스",
+      "properties": {
+        "Node name for S&R": "IsoSpriteSheetRender"
+      },
+      "widgets_values": [
+        "",
+        8,
+        8,
+        256,
+        256,
+        30,
+        0,
+        true,
+        1.3,
+        "CYCLES",
+        25,
+        true,
+        "230, 230, 230",
+        "rows=direction",
+        "iso_sprite_atlas",
+        true,
+        -1,
+        -1,
+        false,
+        true,
+        2,
+        "Standard",
+        0.65,
+        "190, 200, 215",
+        5.5,
+        1.2,
+        5,
+        6,
+        false
+      ],
+      "widgets_values_named": {
+        "mesh_path": "F:/Comfy-Desktop/ComfyUI-Shared/output/dying_retarget_fixed.fbx",
+        "directions": 8,
+        "frames": 8,
+        "cell_width": 256,
+        "cell_height": 256,
+        "elevation": 30,
+        "start_azimuth": 0,
+        "clockwise": true,
+        "zoom": 1.3,
+        "engine": "CYCLES",
+        "samples": 25,
+        "transparent": true,
+        "bg_color": "230, 230, 230",
+        "layout": "rows=direction",
+        "filename_prefix": "iso_sprite_atlas",
+        "save_atlas": true,
+        "frame_start": -1,
+        "frame_end": -1,
+        "include_last": false,
+        "render_normals": true,
+        "supersample": 2,
+        "view_transform": "Standard",
+        "ambient_strength": 0.65,
+        "ambient_color": "190, 200, 215",
+        "key_strength": 5.5,
+        "fill_strength": 1.2,
+        "rim_strength": 5,
+        "sun_softness": 6,
+        "ground_shadow": false
+      }
+    },
+    {
+      "id": 3,
+      "type": "UniRigApplyAnimation",
+      "pos": [
+        5400,
+        1000
+      ],
+      "size": [
+        300,
+        150
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "model_fbx_path",
+          "name": "model_fbx_path",
+          "type": "STRING",
+          "widget": {
+            "name": "model_fbx_path"
+          },
+          "link": 2
+        },
+        {
+          "localized_name": "animation_type",
+          "name": "animation_type",
+          "type": "COMBO",
+          "widget": {
+            "name": "animation_type"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "animation_file",
+          "name": "animation_file",
+          "type": "COMBO",
+          "widget": {
+            "name": "animation_file"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "output_name",
+          "name": "output_name",
+          "shape": 7,
+          "type": "STRING",
+          "widget": {
+            "name": "output_name"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "animated_fbx_path",
+          "name": "animated_fbx_path",
+          "type": "STRING",
+          "links": [
+            9,
+            13,
+            17
+          ]
+        }
+      ],
+      "title": "임의 포즈/애니메이션 적용",
+      "properties": {
+        "Node name for S&R": "UniRigApplyAnimation"
+      },
+      "widgets_values": [
+        "",
+        "mixamo",
+        "Mma_Kick.fbx",
+        "dying_retarget_fixed"
+      ],
+      "widgets_values_named": {
+        "model_fbx_path": "",
+        "animation_type": "mixamo",
+        "animation_file": "Mma_Kick.fbx",
+        "output_name": "dying_retarget_fixed"
+      }
+    },
+    {
+      "id": 16,
+      "type": "ImageFromBatch",
+      "pos": [
+        7150,
+        1000
+      ],
+      "size": [
+        300,
+        100
+      ],
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "이미지",
+          "name": "image",
+          "type": "IMAGE",
+          "link": 14
+        },
+        {
+          "localized_name": "배치 번호",
+          "name": "batch_index",
+          "type": "INT",
+          "widget": {
+            "name": "batch_index"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "길이",
+          "name": "length",
+          "type": "INT",
+          "widget": {
+            "name": "length"
+          },
+          "link": 21
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "이미지",
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            15
+          ]
+        }
+      ],
+      "title": "방향 1개 뽑기 (index=방향×프레임)",
+      "properties": {
+        "Node name for S&R": "ImageFromBatch"
+      },
+      "widgets_values": [
+        0,
+        8
+      ],
+      "widgets_values_named": {
+        "batch_index": 0,
+        "length": 8
+      }
+    },
+    {
+      "id": 18,
+      "type": "SaveAnimatedWEBP",
+      "pos": [
+        7150,
+        1200
+      ],
+      "size": [
+        300,
+        200
+      ],
+      "flags": {},
+      "order": 10,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "이미지",
+          "name": "images",
+          "type": "IMAGE",
+          "link": 16
+        },
+        {
+          "localized_name": "파일명 접두사",
+          "name": "filename_prefix",
+          "type": "STRING",
+          "widget": {
+            "name": "filename_prefix"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "fps",
+          "name": "fps",
+          "type": "FLOAT",
+          "widget": {
+            "name": "fps"
+          },
+          "link": 20
+        },
+        {
+          "localized_name": "무손실",
+          "name": "lossless",
+          "type": "BOOLEAN",
+          "widget": {
+            "name": "lossless"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "품질",
+          "name": "quality",
+          "type": "INT",
+          "widget": {
+            "name": "quality"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "방법",
+          "name": "method",
+          "type": "COMBO",
+          "widget": {
+            "name": "method"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "images",
+          "name": "images",
+          "type": "IMAGE",
+          "links": null
+        }
+      ],
+      "title": "전체 64프레임 WEBP (8방향 전부)",
+      "properties": {
+        "Node name for S&R": "SaveAnimatedWEBP"
+      },
+      "widgets_values": [
+        "iso_sprite_all_dirs",
+        12,
+        true,
+        80,
+        "default"
+      ],
+      "widgets_values_named": {
+        "filename_prefix": "iso_sprite_all_dirs",
+        "fps": 12,
+        "lossless": true,
+        "quality": 80,
+        "method": "default"
+      }
+    },
+    {
+      "id": 17,
+      "type": "SaveAnimatedWEBP",
+      "pos": [
+        7750,
+        1000
+      ],
+      "size": [
+        500,
+        650
+      ],
+      "flags": {},
+      "order": 14,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "이미지",
+          "name": "images",
+          "type": "IMAGE",
+          "link": 15
+        },
+        {
+          "localized_name": "파일명 접두사",
+          "name": "filename_prefix",
+          "type": "STRING",
+          "widget": {
+            "name": "filename_prefix"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "fps",
+          "name": "fps",
+          "type": "FLOAT",
+          "widget": {
+            "name": "fps"
+          },
+          "link": 19
+        },
+        {
+          "localized_name": "무손실",
+          "name": "lossless",
+          "type": "BOOLEAN",
+          "widget": {
+            "name": "lossless"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "품질",
+          "name": "quality",
+          "type": "INT",
+          "widget": {
+            "name": "quality"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "방법",
+          "name": "method",
+          "type": "COMBO",
+          "widget": {
+            "name": "method"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "images",
+          "name": "images",
+          "type": "IMAGE",
+          "links": null
+        }
+      ],
+      "title": "스프라이트 애니 WEBP 저장",
+      "properties": {
+        "Node name for S&R": "SaveAnimatedWEBP"
+      },
+      "widgets_values": [
+        "iso_sprite_anim",
+        12,
+        true,
+        80,
+        "default"
+      ],
+      "widgets_values_named": {
+        "filename_prefix": "iso_sprite_anim",
+        "fps": 12,
+        "lossless": true,
+        "quality": 80,
+        "method": "default"
+      }
+    },
+    {
+      "id": 19,
+      "type": "AnimClipFrameCount",
+      "pos": [
+        5800,
+        1000
+      ],
+      "size": [
+        400,
+        350
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "mesh_path",
+          "name": "mesh_path",
+          "type": "STRING",
+          "widget": {
+            "name": "mesh_path"
+          },
+          "link": 17
+        },
+        {
+          "localized_name": "mode",
+          "name": "mode",
+          "type": "COMBO",
+          "widget": {
+            "name": "mode"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "target_fps",
+          "name": "target_fps",
+          "type": "FLOAT",
+          "widget": {
+            "name": "target_fps"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "every_nth",
+          "name": "every_nth",
+          "type": "INT",
+          "widget": {
+            "name": "every_nth"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "min_frames",
+          "name": "min_frames",
+          "type": "INT",
+          "widget": {
+            "name": "min_frames"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "max_frames",
+          "name": "max_frames",
+          "type": "INT",
+          "widget": {
+            "name": "max_frames"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "speed",
+          "name": "speed",
+          "type": "FLOAT",
+          "widget": {
+            "name": "speed"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "source_fps_override",
+          "name": "source_fps_override",
+          "type": "FLOAT",
+          "widget": {
+            "name": "source_fps_override"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "frames",
+          "name": "frames",
+          "type": "INT",
+          "links": [
+            18,
+            21
+          ]
+        },
+        {
+          "localized_name": "playback_fps",
+          "name": "playback_fps",
+          "type": "FLOAT",
+          "links": [
+            19,
+            20
+          ]
+        },
+        {
+          "localized_name": "frame_start",
+          "name": "frame_start",
+          "type": "INT",
+          "links": null
+        },
+        {
+          "localized_name": "frame_end",
+          "name": "frame_end",
+          "type": "INT",
+          "links": null
+        },
+        {
+          "localized_name": "duration_sec",
+          "name": "duration_sec",
+          "type": "FLOAT",
+          "links": null
+        },
+        {
+          "localized_name": "report",
+          "name": "report",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "title": "클립 길이 → 프레임수/재생fps 자동",
+      "properties": {
+        "Node name for S&R": "AnimClipFrameCount"
+      },
+      "widgets_values": [
+        "",
+        "target_fps",
+        24,
+        3,
+        4,
+        48,
+        1,
+        0
+      ],
+      "widgets_values_named": {
+        "mesh_path": "",
+        "mode": "target_fps",
+        "target_fps": 24,
+        "every_nth": 3,
+        "min_frames": 4,
+        "max_frames": 48,
+        "speed": 1,
+        "source_fps_override": 0
+      }
+    },
+    {
+      "id": 10,
+      "type": "Load3D",
+      "pos": [
+        4200,
+        1000
+      ],
+      "size": [
+        300,
+        600
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "모델 파일",
+          "name": "model_file",
+          "type": "COMBO",
+          "widget": {
+            "name": "model_file"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "이미지",
+          "name": "image",
+          "type": "LOAD_3D",
+          "widget": {
+            "name": "image"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "너비",
+          "name": "width",
+          "type": "INT",
+          "widget": {
+            "name": "width"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "높이",
+          "name": "height",
+          "type": "INT",
+          "widget": {
+            "name": "height"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "image",
+          "name": "image",
+          "type": "IMAGE",
+          "links": null
+        },
+        {
+          "localized_name": "mask",
+          "name": "mask",
+          "type": "MASK",
+          "links": null
+        },
+        {
+          "localized_name": "mesh_path",
+          "name": "mesh_path",
+          "type": "STRING",
+          "links": [
+            7
+          ]
+        },
+        {
+          "localized_name": "normal",
+          "name": "normal",
+          "type": "IMAGE",
+          "links": null
+        },
+        {
+          "localized_name": "camera_info",
+          "name": "camera_info",
+          "type": "LOAD3D_CAMERA",
+          "links": null
+        },
+        {
+          "localized_name": "recording_video",
+          "name": "recording_video",
+          "type": "VIDEO",
+          "links": null
+        },
+        {
+          "localized_name": "model_3d",
+          "name": "model_3d",
+          "type": "FILE_3D",
+          "links": null
+        },
+        {
+          "localized_name": "model_3d_info",
+          "name": "model_3d_info",
+          "type": "LOAD3D_MODEL_INFO",
+          "links": null
+        }
+      ],
+      "title": "3D 파일 선택/업로드 (미리보기)",
+      "properties": {
+        "Resource Folder": "",
+        "Node name for S&R": "Load3D",
+        "Camera Config": {
+          "cameraType": "perspective",
+          "fov": 35,
+          "state": {
+            "position": {
+              "x": 2.5989649593830104,
+              "y": 1.978585541248321,
+              "z": 2.583173468708992
+            },
+            "target": {
+              "x": 0.003636986017227173,
+              "y": 0.0023404955863952637,
+              "z": -0.012154504656791687
+            },
+            "zoom": 1,
+            "cameraType": "perspective",
+            "quaternion": {
+              "x": -0.22584959155639414,
+              "y": 0.37107278755649614,
+              "z": 0.09354996387908249,
+              "w": 0.8958489563464835
+            },
+            "fov": 35,
+            "aspect": 1,
+            "near": 0.01,
+            "far": 10000,
+            "frustum": {
+              "left": -5,
+              "right": 5,
+              "top": 5,
+              "bottom": -5
+            }
+          }
+        },
+        "Light Config": {
+          "intensity": 3,
+          "hdri": {
+            "enabled": false,
+            "hdriPath": "",
+            "showAsBackground": false,
+            "intensity": 1
+          }
+        },
+        "Scene Config": {
+          "showGrid": true,
+          "backgroundColor": "#282828",
+          "backgroundImage": "",
+          "backgroundRenderMode": "tiled",
+          "models": [
+            {
+              "position": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+              },
+              "quaternion": {
+                "x": 0,
+                "y": 0,
+                "z": 0,
+                "w": 1
+              },
+              "scale": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+              }
+            }
+          ]
+        },
+        "Model Config": {
+          "upDirection": "original",
+          "materialMode": "original",
+          "showSkeleton": false,
+          "gizmo": {
+            "enabled": false,
+            "mode": "translate",
+            "position": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "rotation": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "scale": {
+              "x": 1,
+              "y": 1,
+              "z": 1
+            }
+          }
+        }
+      },
+      "widgets_values": [
+        "3d/Hy3D_textured_00028_.glb",
+        "upload3dmodel",
+        "uploadExtraResources",
+        "clear",
+        "",
+        1024,
+        1024
+      ],
+      "widgets_values_named": {
+        "model_file": "3d/Hy3D_textured_00028_.glb",
+        "upload 3d model": "upload3dmodel",
+        "upload extra resources": "uploadExtraResources",
+        "clear": "clear",
+        "image": "",
+        "width": 1024,
+        "height": 1024
+      }
+    },
+    {
+      "id": 15,
+      "type": "PreviewImage",
+      "pos": [
+        7150,
+        2250
+      ],
+      "size": [
+        450,
+        450
+      ],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "이미지",
+          "name": "images",
+          "type": "IMAGE",
+          "link": 12
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "images",
+          "name": "images",
+          "type": "IMAGE",
+          "links": null
+        }
+      ],
+      "title": "개별 프레임 미리보기 (64장)",
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      },
+      "widgets_values": [],
+      "widgets_values_named": {}
+    },
+    {
+      "id": 22,
+      "type": "PreviewImage",
+      "pos": [
+        7800,
+        2250
+      ],
+      "size": [
+        350,
+        450
+      ],
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "이미지",
+          "name": "images",
+          "type": "IMAGE",
+          "link": 24
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "images",
+          "name": "images",
+          "type": "IMAGE",
+          "links": null
+        }
+      ],
+      "title": "노멀 개별 프레임 미리보기",
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      },
+      "widgets_values": [],
+      "widgets_values_named": {}
+    },
+    {
+      "id": 20,
+      "type": "PreviewImage",
+      "pos": [
+        7750,
+        1700
+      ],
+      "size": [
+        500,
+        450
+      ],
+      "flags": {},
+      "order": 13,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "이미지",
+          "name": "images",
+          "type": "IMAGE",
+          "link": 22
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "images",
+          "name": "images",
+          "type": "IMAGE",
+          "links": null
+        }
+      ],
+      "title": "노멀 아틀라스 미리보기",
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      },
+      "widgets_values": [],
+      "widgets_values_named": {}
+    },
+    {
+      "id": 14,
+      "type": "PreviewImage",
+      "pos": [
+        7150,
+        1500
+      ],
+      "size": [
+        550,
+        300
+      ],
+      "flags": {},
+      "order": 11,
+      "mode": 0,
+      "inputs": [
+        {
+          "localized_name": "이미지",
+          "name": "images",
+          "type": "IMAGE",
+          "link": 11
+        }
+      ],
+      "outputs": [
+        {
+          "localized_name": "images",
+          "name": "images",
+          "type": "IMAGE",
+          "links": null
+        }
+      ],
+      "title": "아틀라스 시트 미리보기",
+      "properties": {
+        "Node name for S&R": "PreviewImage"
+      },
+      "widgets_values": [],
+      "widgets_values_named": {}
+    }
+  ],
+  "links": [
+    [
+      1,
+      1,
+      0,
+      2,
+      1,
+      "MIA_MODEL"
+    ],
+    [
+      2,
+      2,
+      0,
+      3,
+      0,
+      "STRING"
+    ],
+    [
+      7,
+      10,
+      2,
+      11,
+      0,
+      "STRING"
+    ],
+    [
+      8,
+      11,
+      0,
+      2,
+      0,
+      "TRIMESH"
+    ],
+    [
+      9,
+      3,
+      0,
+      12,
+      2,
+      "STRING"
+    ],
+    [
+      11,
+      13,
+      2,
+      14,
+      0,
+      "IMAGE"
+    ],
+    [
+      12,
+      13,
+      0,
+      15,
+      0,
+      "IMAGE"
+    ],
+    [
+      13,
+      3,
+      0,
+      13,
+      0,
+      "STRING"
+    ],
+    [
+      14,
+      13,
+      0,
+      16,
+      0,
+      "IMAGE"
+    ],
+    [
+      15,
+      16,
+      0,
+      17,
+      0,
+      "IMAGE"
+    ],
+    [
+      16,
+      13,
+      0,
+      18,
+      0,
+      "IMAGE"
+    ],
+    [
+      17,
+      3,
+      0,
+      19,
+      0,
+      "STRING"
+    ],
+    [
+      18,
+      19,
+      0,
+      13,
+      2,
+      "INT"
+    ],
+    [
+      19,
+      19,
+      1,
+      17,
+      2,
+      "FLOAT"
+    ],
+    [
+      20,
+      19,
+      1,
+      18,
+      2,
+      "FLOAT"
+    ],
+    [
+      21,
+      19,
+      0,
+      16,
+      2,
+      "INT"
+    ],
+    [
+      22,
+      13,
+      6,
+      20,
+      0,
+      "IMAGE"
+    ],
+    [
+      24,
+      13,
+      5,
+      22,
+      0,
+      "IMAGE"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "comfyui_mcp": {
+      "workflow_uuid": "f4f43050-ab5d-4058-b06d-d11fa9c06b1d",
+      "workflow_path": "workflows/3d_sprite.json"
+    },
+    "ds": {
+      "scale": 0.7876781573014119,
+      "offset": [
+        -6412.255354089317,
+        -1006.6309522060714
+      ]
+    }
+  },
+  "version": 0.4
+}

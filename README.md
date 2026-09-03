@@ -127,6 +127,13 @@ Load3D → Hy3DLoadMesh → MIA: Auto Rig → UniRig: Apply Animation
 `Get Image from Batch` with `batch_index = direction × frames` and
 `length = frames` pulls a single direction out for a looping preview.
 
+[`examples/iso_sprite_8dir_atlas.json`](examples/iso_sprite_8dir_atlas.json) is
+that graph end to end — Load3D → Hy3D mesh → MIA auto-rig → UniRig animation →
+atlas + normal atlas + WEBP previews — with the current defaults. It needs
+[ComfyUI-UniRig](https://github.com/Comfy-Org/ComfyUI-UniRig) and the Hunyuan3D
+nodes for the front half; the sprite nodes themselves only need an animated
+FBX/GLB, so you can delete everything upstream and point `mesh_path` at a file.
+
 ## Notes
 
 - `SaveAnimatedWEBP` drops alpha, so a `transparent` render previews on black.
