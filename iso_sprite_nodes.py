@@ -23,10 +23,44 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 WORKER = os.path.join(HERE, "iso_sprite_worker.py")
 
 
-def _to_rgba(png_path):
+def _to_rgba(png_path, size=None, is_normal=False):
     img = Image.open(png_path)
     img.load()
-    return np.asarray(img.convert("RGBA"), dtype=np.float32) / 255.0
+    a = np.asarray(img.convert("RGBA"), dtype=np.float32) / 255.0
+    if size is not None and (a.shape[1], a.shape[0]) != tuple(size):
+        a = _downsample(a, size, is_normal)
+    return a
+
+
+def _downsample(a, size, is_normal):
+    """Resolve a supersampled cell down to its final size.
+
+    Pillow's RGBA resize is already alpha-weighted, so a STRAIGHT-alpha cell goes
+    in and comes back out straight, with the transparent black outside the
+    silhouette correctly ignored. Premultiplying by hand here would apply that
+    weighting twice and leave a bright halo along the edge.
+    """
+    im = Image.fromarray((np.clip(a, 0.0, 1.0) * 255.0 + 0.5).astype(np.uint8), "RGBA")
+    # BOX is a plain area average, which is exactly what supersampling wants at an
+    # integer ratio; Lanczos only earns its ringing on a fractional one.
+    exact = (a.shape[1] % size[0] == 0) and (a.shape[0] % size[1] == 0)
+    out = np.asarray(im.resize(tuple(size), Image.BOX if exact else Image.LANCZOS),
+                     dtype=np.float32) / 255.0
+    if is_normal:
+        # Averaging unit normals shortens them, so renormalise before re-encoding
+        # or the downsampled sheet reads as a slightly flattened surface.
+        n = out[:, :, :3] * 2.0 - 1.0
+        n = n / np.maximum(np.sqrt((n * n).sum(axis=2, keepdims=True)), 1e-6)
+        out[:, :, :3] = np.clip(n * 0.5 + 0.5, 0.0, 1.0)
+    return out
+
+
+def _parse_rgb(text, fallback=(0.0, 0.0, 0.0)):
+    try:
+        vals = [float(c) / 255.0 for c in text.split(",")][:3]
+        return vals if len(vals) == 3 else list(fallback)
+    except ValueError:
+        return list(fallback)
 
 
 class IsoSpriteSheetRender:
@@ -50,7 +84,10 @@ class IsoSpriteSheetRender:
                                           "tooltip": "Direction order S, SW, W, NW, N, NE, E, SE when on."}),
                 "zoom": ("FLOAT", {"default": 1.3, "min": 0.5, "max": 4.0, "step": 0.05,
                                    "tooltip": "Ortho frame size relative to the subject. One camera size for the whole clip."}),
-                "engine": (["CYCLES", "BLENDER_EEVEE_NEXT"], {"default": "CYCLES"}),
+                "engine": (["CYCLES", "BLENDER_EEVEE", "BLENDER_EEVEE_NEXT"],
+                           {"default": "CYCLES",
+                            "tooltip": "BLENDER_EEVEE_NEXT is kept only so older workflows still load; it is an alias of "
+                                       "BLENDER_EEVEE (Blender 4.2+ renamed it back). Cycles is the reference look."}),
                 "samples": ("INT", {"default": 24, "min": 4, "max": 512,
                                     "tooltip": "Cycles CPU samples per cell. Keep low, this runs directions x frames times."}),
                 "transparent": ("BOOLEAN", {"default": True}),
@@ -70,6 +107,34 @@ class IsoSpriteSheetRender:
                                                "tooltip": "Also render a matching VIEW-SPACE normal-map set (same directions/frames/layout) "
                                                           "via a Blender material override. True geometry normals, not an image estimate. "
                                                           "OpenGL convention: R=+X right, G=+Y up, B=+Z toward camera. Roughly doubles render time."}),
+                "supersample": ("INT", {"default": 2, "min": 1, "max": 4,
+                                        "tooltip": "Render each cell N times larger and Lanczos it back down. 2 is the single "
+                                                   "biggest quality win on small sprites (clean edges and clean alpha) and costs "
+                                                   "roughly 3.5x the render time. 1 = off."}),
+                "view_transform": (["Standard", "AgX", "Khronos PBR Neutral", "Filmic", "Raw"],
+                                   {"default": "Standard",
+                                    "tooltip": "Blender's tone mapping. Blender defaults to AgX, which desaturates and rolls off "
+                                               "highlights on purpose - on character art it reads muddy. Standard keeps the "
+                                               "texture's own colour. Does not affect the normal pass, which is always Raw."}),
+                "ambient_strength": ("FLOAT", {"default": 0.65, "min": 0.0, "max": 5.0, "step": 0.05,
+                                               "tooltip": "Environment light. This used to be locked to bg_color at full strength, so "
+                                                          "a light backdrop flattened the shading. Higher = softer and flatter."}),
+                "ambient_color": ("STRING", {"default": "190, 200, 215",
+                                             "tooltip": "Colour of the environment light. A cool ambient against the warm key is what "
+                                                        "gives the form its depth."}),
+                "key_strength": ("FLOAT", {"default": 5.5, "min": 0.0, "max": 20.0, "step": 0.1,
+                                           "tooltip": "Main sun, warm, from the front-left. Casts the shadow that reads the form."}),
+                "fill_strength": ("FLOAT", {"default": 1.2, "min": 0.0, "max": 20.0, "step": 0.1,
+                                            "tooltip": "Opposite side, cool. Lifts the shadow side without erasing it."}),
+                "rim_strength": ("FLOAT", {"default": 5.0, "min": 0.0, "max": 20.0, "step": 0.1,
+                                           "tooltip": "Backlight. This is what pops the silhouette off the background - the single "
+                                                      "most game-sprite-looking light in the rig."}),
+                "sun_softness": ("FLOAT", {"default": 6.0, "min": 0.0, "max": 45.0, "step": 0.5,
+                                           "tooltip": "Angular size of the suns, in degrees. 0 = razor-hard shadow edges, "
+                                                      "6 = soft daylight."}),
+                "ground_shadow": ("BOOLEAN", {"default": False,
+                                              "tooltip": "Add a shadow-catcher floor so the character casts a contact shadow into the "
+                                                         "cell's alpha instead of floating. Cycles only; excluded from the normal pass."}),
             },
         }
 
@@ -84,7 +149,7 @@ class IsoSpriteSheetRender:
                    "Enable render_normals for a matching view-space normal-map set and sheet.")
 
     # --- helpers -----------------------------------------------------------
-    def _load_cells(self, out_dir, prefix, directions, frames, proc):
+    def _load_cells(self, out_dir, prefix, directions, frames, proc, size=None):
         cells = []
         for di in range(directions):
             row = []
@@ -95,7 +160,7 @@ class IsoSpriteSheetRender:
                     raise RuntimeError(
                         "Blender produced no %ssprite cell d%02d_f%03d (exit %s):\n%s"
                         % ("normal " if prefix else "", di, fi, proc.returncode, "\n".join(tail)))
-                row.append(_to_rgba(p))
+                row.append(_to_rgba(p, size=size, is_normal=bool(prefix)))
             cells.append(row)
         return cells
 
@@ -127,7 +192,10 @@ class IsoSpriteSheetRender:
     def render(self, mesh_path, directions, frames, cell_width, cell_height, elevation,
                start_azimuth, clockwise, zoom, engine, samples, transparent, bg_color,
                layout, filename_prefix, save_atlas,
-               frame_start=-1, frame_end=-1, include_last=False, render_normals=False):
+               frame_start=-1, frame_end=-1, include_last=False, render_normals=False,
+               supersample=2, view_transform="Standard", ambient_strength=0.65,
+               ambient_color="190, 200, 215", key_strength=5.5, fill_strength=1.2,
+               rim_strength=5.0, sun_softness=6.0, ground_shadow=False):
         directions = int(directions)
         frames = int(frames)
         mesh = _resolve_mesh(mesh_path.strip())
@@ -148,12 +216,31 @@ class IsoSpriteSheetRender:
                     "frame_start": int(frame_start), "frame_end": int(frame_end),
                     "include_last": bool(include_last),
                     "render_normals": bool(render_normals),
+                    "supersample": int(supersample),
+                    "view_transform": view_transform,
+                    "ambient_strength": float(ambient_strength),
+                    "ambient_color": ambient_color,
+                    "key_strength": float(key_strength),
+                    "fill_strength": float(fill_strength),
+                    "rim_strength": float(rim_strength),
+                    "sun_softness": float(sun_softness),
+                    "ground_shadow": bool(ground_shadow),
                 }, f)
 
             proc = subprocess.run([python, WORKER, "--", cfg_path],
                                   capture_output=True, text=True, cwd=tmpdir)
 
-            cells = self._load_cells(out_dir, "", directions, frames, proc)
+            cell_size = (int(cell_width), int(cell_height))
+            cells = self._load_cells(out_dir, "", directions, frames, proc, size=cell_size)
+
+            if not transparent:
+                # Blender always renders straight alpha now, so the backdrop is
+                # composited here. That keeps bg_color out of the lighting.
+                back = np.array(_parse_rgb(bg_color), dtype=np.float32)
+                for row in cells:
+                    for cell in row:
+                        a = cell[:, :, 3:4]
+                        cell[:, :, :3] = cell[:, :, :3] * a + back * (1.0 - a)
 
             info = {}
             for line in (proc.stdout or "").splitlines():
@@ -172,7 +259,8 @@ class IsoSpriteSheetRender:
             # --- matching view-space normal pass ---------------------------
             normal_atlas_path = ""
             if render_normals:
-                n_cells = self._load_cells(out_dir, "n_", directions, frames, proc)
+                n_cells = self._load_cells(out_dir, "n_", directions, frames, proc,
+                                           size=cell_size)
                 n_flat, n_sheet, _, _, _, _ = self._build_sheet(n_cells, layout, directions, frames)
                 normals = torch.from_numpy(np.stack([c[:, :, :3] for c in n_flat], axis=0))
                 normal_atlas = torch.from_numpy(n_sheet[:, :, :3])[None, ...]
@@ -198,6 +286,14 @@ class IsoSpriteSheetRender:
                 "normal_cells": info.get("normal_count", 0),
                 "normal_space": "view/camera space, OpenGL (R=+X right, G=+Y up, B=+Z toward camera)",
                 "normal_atlas_path": normal_atlas_path,
+                "supersample": info.get("supersample", int(supersample)),
+                "render_resolution": info.get("render_resolution"),
+                "view_transform": info.get("view_transform", view_transform),
+                "ground_shadow": info.get("ground_shadow", bool(ground_shadow)),
+                "lights": {"key": float(key_strength), "fill": float(fill_strength),
+                           "rim": float(rim_strength), "sun_softness_deg": float(sun_softness),
+                           "ambient": float(ambient_strength), "ambient_color": ambient_color,
+                           "rig": "world-fixed (does not follow the camera)"},
             }, ensure_ascii=False, indent=2)
             return (images, masks, atlas, atlas_path, report,
                     normals, normal_atlas, normal_atlas_path)

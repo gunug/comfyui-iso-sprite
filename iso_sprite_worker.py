@@ -103,38 +103,90 @@ size = max(gmaxs[i] - gmins[i] for i in range(3))
 ground_z = gmins.z
 
 # --- world / lights / render settings --------------------------------------
-for loc, energy in (((2, -2, 2), 3.0), ((-2, -2, 1), 1.5), ((0, 2, 1), 1.2)):
-    ld = bpy.data.lights.new("l", "SUN")
+# Three-point rig, WORLD-FIXED on purpose: the lights do not follow the camera,
+# so the sun keeps coming from the same world direction in all 8 sprite
+# directions. A camera-locked rig would read as the world's sun spinning with
+# the character.
+#   key  - warm, above/front-left, casts the readable shadow
+#   fill - cool, opposite side, lifts the shadow side without flattening it
+#   rim  - cool backlight, separates the silhouette from the background
+sun_angle = math.radians(max(0.0, float(cfg.get("sun_softness", 6.0))))
+for name, loc, energy, color in (
+        ("key", (2.0, -2.0, 2.5), float(cfg.get("key_strength", 5.5)), (1.0, 0.97, 0.92)),
+        ("fill", (-2.5, -1.5, 1.0), float(cfg.get("fill_strength", 1.2)), (0.90, 0.94, 1.0)),
+        ("rim", (0.0, 2.5, 1.5), float(cfg.get("rim_strength", 5.0)), (0.82, 0.90, 1.0))):
+    ld = bpy.data.lights.new(name, "SUN")
     ld.energy = energy
-    lo = bpy.data.objects.new("l", ld)
+    ld.color = color
+    ld.angle = sun_angle          # angular diameter: 0 = razor-hard shadows
+    lo = bpy.data.objects.new(name, ld)
     sc.collection.objects.link(lo)
     lo.location = center + Vector(loc) * size
     lo.rotation_euler = (center - lo.location).normalized().to_track_quat("-Z", "Y").to_euler()
 
+# The world is AMBIENT LIGHT ONLY. The backdrop colour is composited by the
+# node, so bg_color can no longer change how the character is lit - the two used
+# to be one value, so a light backdrop washed the shading flat.
 world = bpy.data.worlds.new("w")
 sc.world = world
 world.use_nodes = True
-bg = [float(c) / 255.0 for c in cfg["bg_color"].split(",")][:3]
-world.node_tree.nodes["Background"].inputs[0].default_value = (bg + [1.0])
-world.node_tree.nodes["Background"].inputs[1].default_value = 1.0
+amb = [float(c) / 255.0 for c in cfg.get("ambient_color", "190, 200, 215").split(",")][:3]
+world.node_tree.nodes["Background"].inputs[0].default_value = (amb + [1.0])
+world.node_tree.nodes["Background"].inputs[1].default_value = float(cfg.get("ambient_strength", 0.65))
 
 engine = cfg.get("engine", "CYCLES")
+if engine == "BLENDER_EEVEE_NEXT":
+    # EEVEE Next is plain BLENDER_EEVEE from Blender 4.2 on. The old id is not in
+    # the engine enum any more, so this option silently fell back to Cycles.
+    engine = "BLENDER_EEVEE"
 try:
     sc.render.engine = engine
 except TypeError:
     sc.render.engine = "CYCLES"
-    engine = "CYCLES"
-if sc.render.engine == "CYCLES":
+engine = sc.render.engine
+if engine == "CYCLES":
     sc.cycles.device = "CPU"
     sc.cycles.samples = int(cfg["samples"])
     sc.cycles.use_denoising = False      # OIDN is unavailable in the bundled bpy
+elif engine == "BLENDER_EEVEE":
+    sc.eevee.taa_render_samples = int(cfg["samples"])
 
-sc.render.resolution_x = int(cfg["cell_width"])
-sc.render.resolution_y = int(cfg["cell_height"])
+
+def set_view_transform(name):
+    """Assign a view transform, falling back when this build's OCIO config does
+    not carry the requested one."""
+    for tf in (name, "Standard", "Raw", "None"):
+        try:
+            sc.view_settings.view_transform = tf
+            return tf
+        except TypeError:
+            continue
+    return sc.view_settings.view_transform
+
+
+# The stock default is AgX, a film emulation that deliberately desaturates and
+# rolls highlights off. On flat-lit character art that reads as muddy, so
+# sprites default to Standard.
+colour_view_transform = set_view_transform(cfg.get("view_transform", "Standard"))
+
+supersample = max(1, min(4, int(cfg.get("supersample", 1))))
+sc.render.resolution_x = int(cfg["cell_width"]) * supersample
+sc.render.resolution_y = int(cfg["cell_height"]) * supersample
 sc.render.resolution_percentage = 100
-sc.render.film_transparent = bool(cfg["transparent"])
+# Always straight alpha. The node composites bg_color under the cell when
+# transparent is off, which is what keeps the backdrop out of the lighting.
+sc.render.film_transparent = True
 sc.render.image_settings.file_format = "PNG"
-sc.render.image_settings.color_mode = "RGBA" if cfg["transparent"] else "RGB"
+sc.render.image_settings.color_mode = "RGBA"
+
+shadow_plane = None
+if cfg.get("ground_shadow", False) and engine == "CYCLES":
+    # A shadow catcher contributes ONLY the shadow the character casts on it, as
+    # alpha, so the cell keeps its cutout but the character stops floating.
+    bpy.ops.mesh.primitive_plane_add(size=size * 8.0,
+                                     location=(center.x, center.y, ground_z))
+    shadow_plane = bpy.context.active_object
+    shadow_plane.is_shadow_catcher = True
 
 cd = bpy.data.cameras.new("cam")
 cam = bpy.data.objects.new("cam", cd)
@@ -232,7 +284,13 @@ if cfg.get("render_normals", False):
     if sc.render.engine == "CYCLES":
         # Pure emission converges instantly; samples only buy edge AA.
         sc.cycles.samples = max(4, min(int(cfg["samples"]), 16))
+    if shadow_plane is not None:
+        # The override would paint the catcher as a flat floor normal across the
+        # whole cell; the normal map wants the character alone.
+        shadow_plane.hide_render = True
     normals_written = render_all("n_")
+    if shadow_plane is not None:
+        shadow_plane.hide_render = False
     vl.material_override = None
 
 print("ISO_SPRITE_OK " + json.dumps({
@@ -240,4 +298,8 @@ print("ISO_SPRITE_OK " + json.dumps({
     "frame_start": f_start, "frame_end": f_end, "frame_ids": frame_ids,
     "directions": dirs, "count": len(written),
     "normal_count": len(normals_written),
+    "view_transform": colour_view_transform,
+    "supersample": supersample,
+    "render_resolution": [sc.render.resolution_x, sc.render.resolution_y],
+    "ground_shadow": shadow_plane is not None,
 }), flush=True)
