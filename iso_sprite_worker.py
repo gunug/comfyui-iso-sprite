@@ -188,7 +188,10 @@ def make_view_normal_material():
     vt.convert_to = "CAMERA"
     mul = nt.nodes.new("ShaderNodeVectorMath")
     mul.operation = "MULTIPLY"
-    mul.inputs[1].default_value = (0.5, 0.5, 0.5)
+    # Blender's camera space looks down -Z, so a surface facing the camera has
+    # z = -1 there. Negate Z on the way in so the encoded blue is 1.0 for
+    # camera-facing geometry, which is what OpenGL consumers expect.
+    mul.inputs[1].default_value = (0.5, 0.5, -0.5)
     add = nt.nodes.new("ShaderNodeVectorMath")
     add.operation = "ADD"
     add.inputs[1].default_value = (0.5, 0.5, 0.5)
